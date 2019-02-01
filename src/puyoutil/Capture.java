@@ -1,5 +1,7 @@
 package puyoutil;
 
+import org.opencv.core.Rect;
+
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -17,14 +19,32 @@ public class Capture {
         this.area = rectangle;
     }
 
-    public BufferedImage takePicture() {
+    public void setRectangle(Rectangle rectangle) {
+        this.area = rectangle;
+    }
+
+    BufferedImage takePicture() {
         return robot.createScreenCapture(area);
     }
 
-    public void takeAndSavePicture() {
+    BufferedImage takePicture(Rectangle rectangle) {
+        return robot.createScreenCapture(rectangle);
+    }
+
+    void takeAndSavePicture() {
         try {
             String filename = new SimpleDateFormat("yyyy-mm-dd-hh-mm-ss").format(new Date()) + ".png";
             ImageIO.write(takePicture(), "png", new File(filename));
+            System.out.println("save file.\r\npath:" + filename);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    void takeAndSavePicture(Rectangle rectangle) {
+        try {
+            String filename = new SimpleDateFormat("yyyy-mm-dd-hh-mm-ss").format(new Date()) + ".png";
+            ImageIO.write(takePicture(rectangle), "png", new File(filename));
             System.out.println("save file.\r\npath:" + filename);
         } catch (IOException e) {
             e.printStackTrace();

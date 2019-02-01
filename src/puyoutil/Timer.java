@@ -10,12 +10,14 @@ import java.awt.*;
 
 public class Timer implements UnsetScene {
     private int sec, alart;
-    private long prevMilliSec;
+    private long baseMilliSec, prevMilliSec, nowMilliSec;
     private Time time, count;
     private boolean checkViewHour;
     private boolean threadRunning;
+    private boolean lastResult;
     private Rectangle2D captureRectangle;
     private Capture capture;
+    private TemplateMatching matching;
     private SetScene stage;
     @FXML
     Label countView, timeView;
@@ -32,17 +34,25 @@ public class Timer implements UnsetScene {
             e.printStackTrace();
             return;
         }
-        capture.takeAndSavePicture();
+        matching = new TemplateMatching(Main.READY_IMG_PATH, (int)captureRectangle.getWidth(), (int)captureRectangle.getHeight());
         timeView.setText(Time.formattingTime(time, checkViewHour));
-        prevMilliSec = System.currentTimeMillis();
         threadRunning = true;
+        lastResult = false;
+        baseMilliSec = System.currentTimeMillis();
         new Thread(() -> {
             while (threadRunning) {
-                long nowMillSec = System.currentTimeMillis();
-                count = new Time(nowMillSec - prevMilliSec);
+                lastResult = matching.find(TemplateMatching.BufferedImageToMat(capture.takePicture()));
+                nowMilliSec = System.currentTimeMillis();
+                count.setTime(nowMilliSec - baseMilliSec);
+                if (lastResult) {
+                    baseMilliSec = nowMilliSec;
+                }
                 Platform.runLater(() -> countView.setText(Time.formattingTime(count, checkViewHour)));
+                long sleepTime = Main.MS_BETWEEN_FRAME - (nowMilliSec - prevMilliSec);
+                prevMilliSec = nowMilliSec;
                 try {
-                    Thread.sleep(10);
+                    if (sleepTime > 0)
+                        Thread.sleep(sleepTime);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -79,7 +89,7 @@ public class Timer implements UnsetScene {
 }
 
 class Time {
-    int h, m, s, deci_sec;
+    private int h, m, s, deci_sec;
     Time (int s) {
         this.h = (int) Math.floor(s / 3600);
         this.m = (int) Math.floor((s % 3600) / 60);
@@ -87,6 +97,13 @@ class Time {
         this.deci_sec = 0;
     }
     Time (long ms) {
+        int sec = (int) Math.floor(ms / 1000);
+        this.h = (int) Math.floor(sec / 3600);
+        this.m = (int) Math.floor((sec % 3600) / 60);
+        this.s = sec % 60;
+        this.deci_sec = (int) Math.floor(ms % 1000 / 10);
+    }
+    void setTime (long ms) {
         int sec = (int) Math.floor(ms / 1000);
         this.h = (int) Math.floor(sec / 3600);
         this.m = (int) Math.floor((sec % 3600) / 60);

@@ -12,6 +12,17 @@ import org.opencv.core.Core;
 public class Main extends Application implements SetScene {
     public static final int WIDTH = 400;
     public static final int HEIGHT = 255;
+    public static final int BASE_WIDTH = 1920;
+    public static final int BASE_HEIGHT = 1080;
+    public static final String READY_IMG_PATH = "ready_mini.png";
+    public static final String GO_IMG_PATH = "go.png";
+    public static final double THRESH = 0.7;
+    public static final int FRAME_RATE = 60;
+    public static final int MS_BETWEEN_FRAME = (int) Math.floor(1000 / FRAME_RATE);
+    public static final boolean MATCHING_RANGE_OPTIMIZE_OPTION = true;
+    public static final boolean MATCHING_RESIZE_OPTION = true;
+    public static final double MATCHING_RESIZE_MAGNIFICATION = 0.5;
+
     Stage stage;
 
     @Override
