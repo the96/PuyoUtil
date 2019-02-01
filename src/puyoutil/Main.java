@@ -10,6 +10,8 @@ import javafx.stage.WindowEvent;
 import org.opencv.core.Core;
 
 public class Main extends Application implements SetScene {
+    public static final int WIDTH = 400;
+    public static final int HEIGHT = 255;
     Stage stage;
 
     @Override
@@ -18,10 +20,11 @@ public class Main extends Application implements SetScene {
         FXMLLoader loader = new FXMLLoader(getClass().getResource("setting.fxml"));
         Parent root = loader.load();
         primaryStage.setTitle("PuyoUtil");
-        primaryStage.setScene(new Scene(root, 400, 200));
+        primaryStage.setScene(new Scene(root, WIDTH, HEIGHT));
         primaryStage.show();
         Controller controller = loader.getController();
         controller.setInterface(this);
+        controller.init();
     }
 
     public static void main(String[] args) {

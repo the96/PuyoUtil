@@ -4,18 +4,35 @@ import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 
+import javafx.geometry.Rectangle2D;
+
+import java.awt.*;
+
 public class Timer implements UnsetScene {
     private int sec, alart;
+    private long prevMilliSec;
     private Time time, count;
     private boolean checkViewHour;
-    private SetScene stage;
-    private long prevMilliSec;
     private boolean threadRunning;
+    private Rectangle2D captureRectangle;
+    private Capture capture;
+    private SetScene stage;
     @FXML
     Label countView, timeView;
     void init() {
         time = new Time(sec);
         count = new Time(0);
+        try {
+            capture = new Capture(new Rectangle(
+                                            (int) captureRectangle.getMinX(),
+                                            (int) captureRectangle.getMinY(),
+                                            (int) captureRectangle.getWidth(),
+                                            (int) captureRectangle.getHeight()));
+        } catch (AWTException e) {
+            e.printStackTrace();
+            return;
+        }
+        capture.takeAndSavePicture();
         timeView.setText(Time.formattingTime(time, checkViewHour));
         prevMilliSec = System.currentTimeMillis();
         threadRunning = true;
@@ -43,6 +60,10 @@ public class Timer implements UnsetScene {
 
     void setCheckViewHour(boolean checkViewHour) {
         this.checkViewHour = checkViewHour;
+    }
+
+    void setCaptureRectangle(Rectangle2D captureRectangle) {
+        this.captureRectangle = captureRectangle;
     }
 
     void setInterface(SetScene stage) {
