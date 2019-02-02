@@ -13,7 +13,7 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<VBox maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="255.0" prefWidth="400.0" style="-fx-background-color: #ffffff;" xmlns="http://javafx.com/javafx/8.0.172-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="puyoutil.Controller">
+<VBox maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="300.0" prefWidth="400.0" style="-fx-background-color: #ffffff;" xmlns="http://javafx.com/javafx/8.0.172-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="puyoutil.Controller">
    <children>
       <Label maxWidth="1.7976931348623157E308" text="Settings">
          <font>
@@ -32,6 +32,7 @@
           <RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
           <RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
             <RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
+            <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
         </rowConstraints>
          <children>
             <Label alignment="CENTER" maxWidth="1.7976931348623157E308" text="計測時間">
@@ -104,11 +105,30 @@
                </GridPane.margin>
             </Label>
             <ChoiceBox fx:id="captureSelect" minHeight="39.0" minWidth="150.0" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+            <HBox prefHeight="100.0" prefWidth="200.0" GridPane.columnIndex="1" GridPane.rowIndex="3">
+               <children>
+                  <Button mnemonicParsing="false" onAction="#soundTest" text="Sound">
+                     <HBox.margin>
+                        <Insets right="5.0" />
+                     </HBox.margin>
+                     <font>
+                        <Font size="14.0" />
+                     </font>
+                  </Button>
+                  <Button mnemonicParsing="false" onAction="#checkCapture" text="Check Capture">
+                     <HBox.margin>
+                        <Insets right="5.0" />
+                     </HBox.margin>
+                     <font>
+                        <Font size="14.0" />
+                     </font>
+                  </Button>
+               </children>
+            </HBox>
          </children>
       </GridPane>
-      <HBox alignment="CENTER_RIGHT" VBox.vgrow="NEVER">
+      <HBox alignment="CENTER_RIGHT" VBox.vgrow="ALWAYS">
          <children>
-            <Button mnemonicParsing="false" onAction="#soundTest" text="Sound" />
             <CheckBox fx:id="checkViewHour" mnemonicParsing="false" selected="true" text="分以下のみを表示">
                <HBox.margin>
                   <Insets bottom="5.0" left="20.0" right="20.0" top="5.0" />
@@ -121,6 +141,9 @@
                   <Insets left="20.0" right="10.0" />
                </HBox.margin>
             </Button>
-         </children></HBox>
+         </children>
+         <VBox.margin>
+            <Insets top="10.0" />
+         </VBox.margin></HBox>
    </children>
 </VBox>

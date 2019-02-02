@@ -14,7 +14,7 @@ import java.io.File;
 
 public class Main extends Application implements SetScene {
     public static final int WIDTH = 400;
-    public static final int HEIGHT = 255;
+    public static final int HEIGHT = 300;
     public static final int BASE_WIDTH = 1920;
     public static final int BASE_HEIGHT = 1080;
     public static final String READY_IMG_PATH = "ready_mini.png";

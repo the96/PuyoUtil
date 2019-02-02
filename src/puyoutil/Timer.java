@@ -20,6 +20,8 @@ public class Timer implements UnsetScene {
     private Capture capture;
     private TemplateMatching readyMatching, goMatching;
     private SetScene stage;
+    private Thread matchingThread;
+    private static final int INIT = -1;
     private static final int NOT_READY = 0;
     private static final int READY = 1;
     private static final int GO = 2;
@@ -42,20 +44,14 @@ public class Timer implements UnsetScene {
         readyMatching = new TemplateMatching(Main.READY_IMG_PATH, (int)captureRectangle.getWidth(), (int)captureRectangle.getHeight());
         goMatching = new TemplateMatching(Main.GO_IMG_PATH, (int)captureRectangle.getWidth(), (int)captureRectangle.getHeight());
         timeView.setText(Time.formattingTime(time, checkViewHour));
-        threadRunning = true;
-        matchingStatus = NOT_READY;
-        baseMilliSec = System.currentTimeMillis();
-        alartbase = baseMilliSec;
-        timerbase = baseMilliSec;
-        new Thread(() -> {
+        matchingThread = new Thread(() -> {
             while (threadRunning) {
                 // readyがマッチングした後goをマッチング
-                if (matchingStatus == NOT_READY) {
+                if (matchingStatus == NOT_READY || matchingStatus == INIT) {
                     if (readyMatching.find(TemplateMatching.BufferedImageToMat(capture.takePicture()))) {
                         matchingStatus = READY;
                         baseMilliSec = System.currentTimeMillis();
                         count.setTime(0);
-                        System.out.println("raedy");
                     }
                 } else {
                     if (goMatching.find(TemplateMatching.BufferedImageToMat(capture.takePicture()))) {
@@ -63,18 +59,18 @@ public class Timer implements UnsetScene {
                         baseMilliSec = System.currentTimeMillis();
                         alartbase = baseMilliSec;
                         timerbase = baseMilliSec;
-                        System.out.println("go");
                     } else {
-                        if (nowMilliSec - baseMilliSec > 1500) {
+                        long pastMilliSec = nowMilliSec - baseMilliSec;
+                        count.setTime(pastMilliSec);
+                        if (pastMilliSec > 1500) {
                             matchingStatus = NOT_READY;
-                            System.out.println("notready");
                         }
                     }
                 }
                 nowMilliSec = System.currentTimeMillis();
-                long pastMilliSec = nowMilliSec - baseMilliSec;
-                count.setTime(pastMilliSec);
                 if (matchingStatus == NOT_READY) {
+                    long pastMilliSec = nowMilliSec - baseMilliSec;
+                    count.setTime(pastMilliSec);
                     if (nowMilliSec - timerbase >= timer * 1000) {
                         timerbase = nowMilliSec;
                         new Thread(()->{
@@ -108,7 +104,7 @@ public class Timer implements UnsetScene {
                     e.printStackTrace();
                 }
             }
-        }).start();
+        });
     }
 
     void setTime(int sec) {
@@ -136,6 +132,17 @@ public class Timer implements UnsetScene {
     public void unset() {
         threadRunning = false;
         this.stage.setCloseOperation(event -> {});
+    }
+
+    void onClick() {
+        if (!threadRunning) {
+            threadRunning = true;
+            matchingStatus = INIT;
+            baseMilliSec = System.currentTimeMillis();
+            alartbase = baseMilliSec;
+            timerbase = baseMilliSec;
+            matchingThread.start();
+        }
     }
 }
 
