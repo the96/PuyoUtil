@@ -14,10 +14,10 @@ public class TemplateMatching {
     int match_x = 0, match_y = 0; // debug
     int img_width, img_height;
     private int width, height;
-    private static final int MATCHING_X = 600;
+    private static final int MATCHING_X = 550;
     private static final int MATCHING_Y = 400;
     private static final int MATCHING_WIDTH = 650;
-    private static final int MATCHING_HEIGHT = 250;
+    private static final int MATCHING_HEIGHT = 300;
     private static final Rect MATCHING_RECT = new Rect(MATCHING_X, MATCHING_Y, MATCHING_WIDTH, MATCHING_HEIGHT);
 
     TemplateMatching(String baseImgPath, int capWidth, int capHeight) {
@@ -34,6 +34,7 @@ public class TemplateMatching {
         }
         img_width = (int) (resizeSize.width);
         img_height = (int) (resizeSize.height);
+        System.out.println(img.width());
         Imgproc.resize(img, img, resizeSize);
     }
 
@@ -41,8 +42,7 @@ public class TemplateMatching {
         // 結果を格納する行列
         Mat result = new Mat(target.rows() - img.rows(), target.cols() - img.cols(), CvType.CV_32FC1);
         Imgproc.matchTemplate(target, img, result, Imgproc.TM_CCOEFF_NORMED);
-        Imgproc.threshold(result, result, Main.THRESH, 1.0, Imgproc.THRESH_TOZERO);
-        double max = Main.THRESH;
+        double max = -1.0;
         for (int y = 0; y < result.rows(); y++) {
             for (int x = 0; x < result.cols(); x++) {
                 double match = result.get(y, x)[0];

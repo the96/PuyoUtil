@@ -13,7 +13,7 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<VBox maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="255.0" prefWidth="400.0" style="-fx-background-color: #ffffff;" xmlns="http://javafx.com/javafx/8.0.121" xmlns:fx="http://javafx.com/fxml/1" fx:controller="puyoutil.Controller">
+<VBox maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="255.0" prefWidth="400.0" style="-fx-background-color: #ffffff;" xmlns="http://javafx.com/javafx/8.0.172-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="puyoutil.Controller">
    <children>
       <Label maxWidth="1.7976931348623157E308" text="Settings">
          <font>
@@ -108,6 +108,7 @@
       </GridPane>
       <HBox alignment="CENTER_RIGHT" VBox.vgrow="NEVER">
          <children>
+            <Button mnemonicParsing="false" onAction="#soundTest" text="Sound" />
             <CheckBox fx:id="checkViewHour" mnemonicParsing="false" selected="true" text="分以下のみを表示">
                <HBox.margin>
                   <Insets bottom="5.0" left="20.0" right="20.0" top="5.0" />

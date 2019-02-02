@@ -59,6 +59,11 @@ public class Controller implements UnsetScene{
         timer.init();
     }
 
+    @FXML
+    public void soundTest(ActionEvent e) {
+        Main.bellstar.play();
+    }
+
     public void setInterface(SetScene stage) {
         this.stage = stage;
     }

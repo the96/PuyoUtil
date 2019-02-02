@@ -9,20 +9,25 @@ import javafx.geometry.Rectangle2D;
 import java.awt.*;
 
 public class Timer implements UnsetScene {
-    private int sec, alart;
+    private int sec;
+    private long timer, alart, alartbase, timerbase;
     private long baseMilliSec, prevMilliSec, nowMilliSec;
     private Time time, count;
     private boolean checkViewHour;
     private boolean threadRunning;
-    private boolean lastResult;
+    private int matchingStatus;
     private Rectangle2D captureRectangle;
     private Capture capture;
-    private TemplateMatching matching;
+    private TemplateMatching readyMatching, goMatching;
     private SetScene stage;
+    private static final int NOT_READY = 0;
+    private static final int READY = 1;
+    private static final int GO = 2;
     @FXML
     Label countView, timeView;
     void init() {
         time = new Time(sec);
+        timer = sec;
         count = new Time(0);
         try {
             capture = new Capture(new Rectangle(
@@ -34,21 +39,67 @@ public class Timer implements UnsetScene {
             e.printStackTrace();
             return;
         }
-        matching = new TemplateMatching(Main.READY_IMG_PATH, (int)captureRectangle.getWidth(), (int)captureRectangle.getHeight());
+        readyMatching = new TemplateMatching(Main.READY_IMG_PATH, (int)captureRectangle.getWidth(), (int)captureRectangle.getHeight());
+        goMatching = new TemplateMatching(Main.GO_IMG_PATH, (int)captureRectangle.getWidth(), (int)captureRectangle.getHeight());
         timeView.setText(Time.formattingTime(time, checkViewHour));
         threadRunning = true;
-        lastResult = false;
+        matchingStatus = NOT_READY;
         baseMilliSec = System.currentTimeMillis();
+        alartbase = baseMilliSec;
+        timerbase = baseMilliSec;
         new Thread(() -> {
             while (threadRunning) {
-                lastResult = matching.find(TemplateMatching.BufferedImageToMat(capture.takePicture()));
+                // readyがマッチングした後goをマッチング
+                if (matchingStatus == NOT_READY) {
+                    if (readyMatching.find(TemplateMatching.BufferedImageToMat(capture.takePicture()))) {
+                        matchingStatus = READY;
+                        baseMilliSec = System.currentTimeMillis();
+                        count.setTime(0);
+                        System.out.println("raedy");
+                    }
+                } else {
+                    if (goMatching.find(TemplateMatching.BufferedImageToMat(capture.takePicture()))) {
+                        matchingStatus = GO;
+                        baseMilliSec = System.currentTimeMillis();
+                        alartbase = baseMilliSec;
+                        timerbase = baseMilliSec;
+                        System.out.println("go");
+                    } else {
+                        if (nowMilliSec - baseMilliSec > 1500) {
+                            matchingStatus = NOT_READY;
+                            System.out.println("notready");
+                        }
+                    }
+                }
                 nowMilliSec = System.currentTimeMillis();
-                count.setTime(nowMilliSec - baseMilliSec);
-                if (lastResult) {
-                    baseMilliSec = nowMilliSec;
+                long pastMilliSec = nowMilliSec - baseMilliSec;
+                count.setTime(pastMilliSec);
+                if (matchingStatus == NOT_READY) {
+                    if (nowMilliSec - timerbase >= timer * 1000) {
+                        timerbase = nowMilliSec;
+                        new Thread(()->{
+                            for (int i = 0; i < 3; i++) {
+                                Main.bellstar.play();
+                                try {
+                                    Thread.sleep(500);
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        }).start();
+                    }
+                    if (nowMilliSec - alartbase >= alart * 1000) {
+                        alartbase = nowMilliSec;
+                        Main.bellstar.play();
+                    }
                 }
                 Platform.runLater(() -> countView.setText(Time.formattingTime(count, checkViewHour)));
-                long sleepTime = Main.MS_BETWEEN_FRAME - (nowMilliSec - prevMilliSec);
+                long sleepTime;
+                if (matchingStatus == READY || Main.FINE_OPTION ) {
+                    sleepTime = Main.MS_BETWEEN_FRAME - (nowMilliSec - prevMilliSec);
+                } else {
+                    sleepTime = Main.MS_BETWEEN_FRAME + 16 - (nowMilliSec - prevMilliSec);
+                }
                 prevMilliSec = nowMilliSec;
                 try {
                     if (sleepTime > 0)
