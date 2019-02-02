@@ -2,6 +2,8 @@ PuyoUtil is covered under MIT License.
 But don't secondly distribute image file.
 Even if you are damaged from use this, I don't take responsiblity.
 
+効果音素材：ポケットサウンド – https://pocket-se.info/
+
 OpenCV 4.0.1
 license =>
 ===============================================================================================
