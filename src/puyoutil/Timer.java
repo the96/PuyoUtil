@@ -25,6 +25,7 @@ public class Timer implements UnsetScene {
     private static final int NOT_READY = 0;
     private static final int READY = 1;
     private static final int GO = 2;
+    private static final int PRE_NOTICE_SEC = 10;
     @FXML
     Label countView, timeView;
     void init() {
@@ -46,50 +47,64 @@ public class Timer implements UnsetScene {
         timeView.setText(Time.formattingTime(time, checkViewHour));
         matchingThread = new Thread(() -> {
             while (threadRunning) {
-                // readyがマッチングした後goをマッチング
-                if (matchingStatus == NOT_READY || matchingStatus == INIT) {
-                    if (readyMatching.find(TemplateMatching.BufferedImageToMat(capture.takePicture()))) {
-                        matchingStatus = READY;
-                        baseMilliSec = System.currentTimeMillis();
-                        count.setTime(0);
-                    }
-                } else {
-                    if (goMatching.find(TemplateMatching.BufferedImageToMat(capture.takePicture()))) {
-                        matchingStatus = GO;
-                        baseMilliSec = System.currentTimeMillis();
-                        alartbase = baseMilliSec;
-                        timerbase = baseMilliSec;
-                    } else {
+                nowMilliSec = System.currentTimeMillis();
+                // 上から順に状態が遷移
+                switch (matchingStatus) {
+                    case NOT_READY:
                         long pastMilliSec = nowMilliSec - baseMilliSec;
                         count.setTime(pastMilliSec);
-                        if (pastMilliSec > 1500) {
+                        Platform.runLater(() -> countView.setText(Time.formattingTime(count, checkViewHour)));
+                        if (nowMilliSec - timerbase >= (timer + PRE_NOTICE_SEC) * 1000) { // 予定時刻10秒前からの処理
+                            timerbase = nowMilliSec;
+                            new Thread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    try {
+                                        loopPlay(2);
+                                        Thread.sleep(PRE_NOTICE_SEC * 1000);
+                                        loopPlay(4);
+                                    } catch (InterruptedException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+                                void loopPlay(int cnt) {
+                                    for (int i = 0; i < cnt; i++) {
+                                        Main.bellstar.play();
+                                        try {
+                                            Thread.sleep(500);
+                                        } catch (InterruptedException e) {
+                                            e.printStackTrace();
+                                        }
+                                    }
+                                }
+                            }).start();
+                        } else if (nowMilliSec - alartbase >= alart * 1000) { // 定期的な通知
+                            alartbase = nowMilliSec;
+                            Main.bellstar.play();
+                        }
+                    case INIT:
+                        if (readyMatching.find(TemplateMatching.BufferedImageToMat(capture.takePicture()))) {
+                            matchingStatus = READY;
+                        }
+                        break;
+                    case READY:
+                        if (goMatching.find(TemplateMatching.BufferedImageToMat(capture.takePicture()))) {
+                            matchingStatus = GO;
+                            count.setTime(0);
+                            Platform.runLater(() -> countView.setText(Time.formattingTime(count, checkViewHour)));
+                        }
+                        break;
+                    case GO:
+                        if (goMatching.find(TemplateMatching.BufferedImageToMat(capture.takePicture()))) {
+                            baseMilliSec = nowMilliSec;
+                            alartbase = baseMilliSec;
+                            timerbase = baseMilliSec;
+                            // GO状態のまま1秒以上検出されなかったらNOT_READYへ状態遷移
+                        } else if (nowMilliSec - baseMilliSec >= 1000){
                             matchingStatus = NOT_READY;
                         }
-                    }
+                        break;
                 }
-                nowMilliSec = System.currentTimeMillis();
-                if (matchingStatus == NOT_READY) {
-                    long pastMilliSec = nowMilliSec - baseMilliSec;
-                    count.setTime(pastMilliSec);
-                    if (nowMilliSec - timerbase >= timer * 1000) {
-                        timerbase = nowMilliSec;
-                        new Thread(()->{
-                            for (int i = 0; i < 3; i++) {
-                                Main.bellstar.play();
-                                try {
-                                    Thread.sleep(500);
-                                } catch (InterruptedException e) {
-                                    e.printStackTrace();
-                                }
-                            }
-                        }).start();
-                    }
-                    if (nowMilliSec - alartbase >= alart * 1000) {
-                        alartbase = nowMilliSec;
-                        Main.bellstar.play();
-                    }
-                }
-                Platform.runLater(() -> countView.setText(Time.formattingTime(count, checkViewHour)));
                 long sleepTime;
                 if (matchingStatus == READY || Main.FINE_OPTION ) {
                     sleepTime = Main.MS_BETWEEN_FRAME - (nowMilliSec - prevMilliSec);
