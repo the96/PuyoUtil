@@ -1,5 +1,9 @@
 package puyoutil;
 
+import com.github.sarxos.webcam.Webcam;
+import javafx.collections.ListChangeListener;
+import javafx.collections.MapChangeListener;
+import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -7,9 +11,11 @@ import javafx.geometry.Rectangle2D;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.control.TextField;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 
+import java.awt.*;
 import java.io.IOException;
 import java.util.ArrayList;
 
@@ -17,32 +23,87 @@ public class Controller implements UnsetScene{
     @FXML
     TextField fieldTime, fieldAlart;
     @FXML
-    ChoiceBox<ScreenItem> captureSelect;
+    ChoiceBox<CaptureObject> captureSelect;
     @FXML
     CheckBox checkViewHour;
-    ArrayList<ScreenItem> screenItemList;
-    SetScene stage;
-    Preview previewController;
-    Stage previewStage;
+    @FXML
+    RadioButton display, captureDevice;
+    final ToggleGroup group = new ToggleGroup();
+    private SetScene stage;
+    private Preview previewController;
+    private Stage previewStage;
+    ArrayList<CaptureObject> displayList;
+    ArrayList<CaptureObject> captureDeviceList;
+    private static final int DISPLAY = 1;
+    private static final int CAPTURE_DEVICE = 2;
+
+    class CaptureObject {
+        String name;
+        String text;
+        int type;
+        Object object;
+        CaptureObject (int index, String text, int type, Object object) {
+            if (type == DISPLAY) {
+                name = "display[" + index + "]";
+            } else if(type == CAPTURE_DEVICE) {
+                name = "device[" + index + "]";
+            }
+            this.text = text;
+            this.type = type;
+            this.object = object;
+        }
+        public String toString() {
+            return name + ":" + text;
+        }
+    }
 
     public void init() {
-        screenItemList = new ArrayList<>();
-        int i = 0;
-        ScreenItem defVal = null;
+        display.setToggleGroup(group);
+        captureDevice.setToggleGroup(group);
+        display.setSelected(true);
+        displayList = new ArrayList<>();
+        int index = 0;
         for (Screen screen: Screen.getScreens()) {
-            ScreenItem item = new ScreenItem(screen, i++);
-            screenItemList.add(item);
-            if (defVal == null) defVal = item;
+            Rectangle2D rec = screen.getBounds();
+            String text = "(" + Math.floor(rec.getWidth()) + "x" + Math.floor(rec.getHeight()) + ")";
+            CaptureObject object = new CaptureObject(index, text, DISPLAY ,screen);
+            displayList.add(object);
         }
-        screenItemList.add(new ScreenItem(i));
-        captureSelect.getItems().setAll(screenItemList);
-        captureSelect.setValue(defVal);
+        captureDeviceList = new ArrayList<>();
+        index = 0;
+        for (Webcam webcam: Webcam.getWebcams()) {
+            CaptureObject object = new CaptureObject(index, webcam.getName(), CAPTURE_DEVICE ,webcam);
+            captureDeviceList.add(object);
+        }
+        setItemToSelectList(DISPLAY);
+    }
+    @FXML
+    public void onSelectCapture(ActionEvent e) {
+        if (e.getTarget() == display) {
+            setItemToSelectList(DISPLAY);
+        } else if (e.getTarget() == captureDevice) {
+            setItemToSelectList(CAPTURE_DEVICE);
+        }
+    }
+
+    public void setItemToSelectList(int radioCapture) {
+        captureSelect.getItems().clear();
+        switch (radioCapture) {
+            case DISPLAY:
+                captureSelect.getItems().setAll(displayList);
+                captureSelect.setValue(displayList.get(0));
+                break;
+            case CAPTURE_DEVICE:
+                captureSelect.getItems().setAll(captureDeviceList);
+                captureSelect.setValue(captureDeviceList.get(0));
+                break;
+        }
     }
 
     @FXML
     public void onClickAtStart(ActionEvent e) throws IOException {
-        Screen screen = getScreen();
-        if (screen == null) return;
+        CaptureObject captureObject= captureSelect.getValue();
+        if (captureObject == null) return;
         if (previewController != null && previewController.isRunning()) {
             previewController.close();
             previewStage.close();
@@ -55,21 +116,39 @@ public class Controller implements UnsetScene{
         timer.setAlert(Integer.parseInt(fieldAlart.getText()));
         timer.setCheckViewHour(checkViewHour.isSelected());
         timer.setInterface(stage);
-        timer.setCaptureRectangle(screen.getBounds());
+        timer.setCapture(this.getCapture(captureObject));
         timer.init();
         view.setOnMouseClicked(event -> timer.onClick());
     }
 
-    private Screen getScreen() {
-        Screen screen = captureSelect.getValue().screen;
-        if (screen == null) {
-            Alert alert   = new Alert( Alert.AlertType.NONE , "" , ButtonType.OK);
-            alert.setTitle( "ごめんなさい" );
-            alert.getDialogPane().setHeaderText( "手動選択は現在実装されていません" );
-            alert.getDialogPane().setContentText( "キャプチャするディスプレイを一枚選択してください" );
-            alert.showAndWait();
+    private Capture getCapture(CaptureObject object) {
+        switch (object.type) {
+            case DISPLAY:
+                try {
+                    Screen screen = (Screen) object.object;
+                    return new DisplayCapture(getRectangleFromRectangle2D(screen.getBounds()));
+                } catch (AWTException e) {
+                    e.printStackTrace();
+                } catch (ClassCastException e) {
+                    e.printStackTrace();
+                }
+            break;
+            case CAPTURE_DEVICE:
+                try {
+                    Webcam webcam = (Webcam) object.object;
+                    DeviceCapture dc = new DeviceCapture(webcam);
+                    dc.init(new Dimension(1980, 1080));
+                    return dc;
+                } catch (ClassCastException e) {
+                    e.printStackTrace();
+                }
+                break;
         }
-        return screen;
+        return null;
+    }
+
+    private Rectangle getRectangleFromRectangle2D(Rectangle2D rec) {
+        return new Rectangle((int) rec.getMinX(), (int) rec.getMinY(), (int) rec.getWidth(), (int) rec.getHeight());
     }
 
     @FXML
@@ -79,8 +158,8 @@ public class Controller implements UnsetScene{
 
     @FXML
     public void checkCapture(ActionEvent e) throws IOException {
-        Screen screen = getScreen();
-        if (screen == null) return;
+        CaptureObject captureObject = captureSelect.getValue();
+        if (captureObject == null) return;
         previewStage = new Stage();
         FXMLLoader loader = new FXMLLoader(getClass().getResource("preview.fxml"));
         Parent root = loader.load();
@@ -88,32 +167,11 @@ public class Controller implements UnsetScene{
         previewStage.setScene(new Scene(root, 400, 225));
         previewStage.show();
         previewController = loader.getController();
-        previewController.init(screen.getBounds());
+        previewController.init(this.getCapture(captureObject));
         previewStage.setOnCloseRequest(event -> previewController.close());
     }
 
     public void setInterface(SetScene stage) {
         this.stage = stage;
-    }
-}
-
-class ScreenItem {
-    Screen screen;
-    int index;
-    ScreenItem(Screen screen, int index) {
-        this.screen = screen;
-        this.index = index;
-    }
-    ScreenItem(int index) {
-        this.screen = null;
-        this.index = index;
-    }
-    public String toString() {
-        if (this.screen != null) {
-            Rectangle2D rec = screen.getBounds();
-            return "screen[" + index + "](" + Math.floor(rec.getWidth()) + "x" + Math.floor(rec.getHeight()) + ")";
-        } else {
-            return "手動で選択";
-        }
     }
 }

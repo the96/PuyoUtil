@@ -16,7 +16,6 @@ public class Timer implements UnsetScene {
     private boolean checkViewHour;
     private boolean threadRunning;
     private int matchingStatus;
-    private Rectangle2D captureRectangle;
     private Capture capture;
     private TemplateMatching readyMatching, goMatching;
     private SetScene stage;
@@ -31,19 +30,8 @@ public class Timer implements UnsetScene {
     void init() {
         time = new Time(sec);
         timer = sec;
-        count = new Time(0);
-        try {
-            capture = new Capture(new Rectangle(
-                                            (int) captureRectangle.getMinX(),
-                                            (int) captureRectangle.getMinY(),
-                                            (int) captureRectangle.getWidth(),
-                                            (int) captureRectangle.getHeight()));
-        } catch (AWTException e) {
-            e.printStackTrace();
-            return;
-        }
-        readyMatching = new TemplateMatching(Main.READY_IMG_PATH, (int)captureRectangle.getWidth(), (int)captureRectangle.getHeight());
-        goMatching = new TemplateMatching(Main.GO_IMG_PATH, (int)captureRectangle.getWidth(), (int)captureRectangle.getHeight());
+        readyMatching = new TemplateMatching(Main.READY_IMG_PATH, capture.getWidth(), capture.getHeight());
+        goMatching = new TemplateMatching(Main.GO_IMG_PATH, capture.getWidth(), capture.getHeight());
         timeView.setText(Time.formattingTime(time, checkViewHour));
         matchingThread = new Thread(() -> {
             while (threadRunning) {
@@ -82,6 +70,7 @@ public class Timer implements UnsetScene {
                             alartbase = nowMilliSec;
                             Main.bellstar.play();
                         }
+                        // break through
                     case INIT:
                         if (readyMatching.find(TemplateMatching.BufferedImageToMat(capture.takePicture()))) {
                             matchingStatus = READY;
@@ -134,8 +123,8 @@ public class Timer implements UnsetScene {
         this.checkViewHour = checkViewHour;
     }
 
-    void setCaptureRectangle(Rectangle2D captureRectangle) {
-        this.captureRectangle = captureRectangle;
+    void setCapture(Capture capture) {
+        this.capture = capture;
     }
 
     void setInterface(SetScene stage) {

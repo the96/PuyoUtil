@@ -14,12 +14,12 @@ import java.io.File;
 
 public class Main extends Application implements SetScene {
     public static final int WIDTH = 400;
-    public static final int HEIGHT = 300;
+    public static final int HEIGHT = 320;
     public static final int BASE_WIDTH = 1920;
     public static final int BASE_HEIGHT = 1080;
     public static final String READY_IMG_PATH = "ready_mini.png";
     public static final String GO_IMG_PATH = "go_mini.png";
-    public static final boolean BUILD_JAR = false;
+    public static final boolean BUILD_JAR = true;
     public static final double THRESH = 0.7;
     public static final int FRAME_RATE = 60;
     public static final int MS_BETWEEN_FRAME = (int) Math.floor(1000 / FRAME_RATE);
